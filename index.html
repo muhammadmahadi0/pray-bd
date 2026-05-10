@@ -1,0 +1,1305 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pray BD - Modern Prayer Times</title>
+        <meta
+            name="description"
+            content="Accurate prayer times for Bangladesh with countdown and Hijri date"
+        />
+        <meta name="theme-color" content="#000000" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            emerald: {
+                                950: "#022c22",
+                                900: "#064e3b",
+                                800: "#065f46",
+                                700: "#047857",
+                            },
+                            gold: {
+                                400: "#d4af37",
+                                500: "#c9a227",
+                                600: "#b8911f",
+                            },
+                            cream: {
+                                50: "#fdfbf7",
+                                100: "#f7f3e8",
+                                200: "#ede4d0",
+                            },
+                        },
+                        fontFamily: {
+                            sans: ["Inter", "Noto Sans Bengali", "sans-serif"],
+                            arabic: ["Amiri", "serif"],
+                        },
+                        animation: { "fade-in": "fadeIn 0.5s ease-out" },
+                        keyframes: {
+                            fadeIn: {
+                                "0%": {
+                                    opacity: "0",
+                                    transform: "translateY(10px)",
+                                },
+                                "100%": {
+                                    opacity: "1",
+                                    transform: "translateY(0)",
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <style>
+            :root {
+                --bg-primary: #000000;
+                --bg-secondary: #0a0a0a;
+                --bg-card: #111111;
+                --text-primary: #fdfbf7;
+                --text-secondary: #a3a3a3;
+                --accent-gold: #d4af37;
+                --accent-green: #047857;
+            }
+            .light {
+                --bg-primary: #fdfbf7;
+                --bg-secondary: #f7f3e8;
+                --bg-card: #ffffff;
+                --text-primary: #064e3b;
+                --text-secondary: #475569;
+                --accent-gold: #b8911f;
+            }
+            body {
+                background: var(--bg-primary);
+                min-height: 100vh;
+                font-family: "Inter", "Noto Sans Bengali", sans-serif;
+                color: var(--text-primary);
+            }
+            .glass-card {
+                background: rgba(30, 30, 30, 0.8);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(212, 175, 55, 0.2);
+            }
+            .light .glass-card {
+                background: rgba(255, 255, 255, 0.7);
+                border: 1px solid rgba(212, 175, 55, 0.3);
+            }
+            .prayer-card {
+                transition: all 0.3s ease;
+            }
+            .prayer-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            }
+            .prayer-card.active {
+                background: linear-gradient(
+                    135deg,
+                    rgba(212, 175, 55, 0.3) 0%,
+                    rgba(4, 120, 87, 0.3) 100%
+                );
+                border-color: var(--accent-gold);
+            }
+            .countdown-pulse {
+                animation: pulse 2s infinite;
+            }
+            .islamic-pattern {
+                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            }
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: var(--bg-primary);
+            }
+            ::-webkit-scrollbar-thumb {
+                background: var(--accent-gold);
+                border-radius: 3px;
+            }
+            .skeleton {
+                background: linear-gradient(
+                    90deg,
+                    rgba(212, 175, 55, 0.1) 25%,
+                    rgba(212, 175, 55, 0.2) 50%,
+                    rgba(212, 175, 55, 0.1) 75%
+                );
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+            }
+            @keyframes shimmer {
+                0% {
+                    background-position: 200% 0;
+                }
+                100% {
+                    background-position: -200% 0;
+                }
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.7;
+                }
+            }
+            @media (max-width: 640px) {
+                .countdown-timer {
+                    font-size: 3.5rem;
+                    letter-spacing: 0.05em;
+                }
+                .hero-section {
+                    padding: 1.5rem !important;
+                }
+            }
+            @media (min-width: 640px) and (max-width: 768px) {
+                .countdown-timer {
+                    font-size: 4.5rem;
+                }
+            }
+        </style>
+    </head>
+    <body class="islamic-pattern">
+        <div id="app">
+            <header class="sticky top-0 z-40 glass-card">
+                <div
+                    class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between"
+                >
+                    <div class="flex items-center gap-2">
+                        <i
+                            data-lucide="mosque"
+                            class="w-6 h-6 text-gold-400"
+                        ></i>
+                        <h1 class="text-xl font-semibold text-gold-400">
+                            Pray BD
+                        </h1>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button
+                            id="langToggle"
+                            class="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            title="Toggle Language"
+                        >
+                            <i data-lucide="globe" class="w-5 h-5"></i>
+                        </button>
+                        <button
+                            id="themeToggle"
+                            class="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            title="Toggle Theme"
+                        >
+                            <i
+                                data-lucide="moon"
+                                class="w-5 h-5 dark:hidden"
+                            ></i>
+                            <i
+                                data-lucide="sun"
+                                class="w-5 h-5 hidden dark:block"
+                            ></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Hero Section - Countdown -->
+            <section class="max-w-4xl mx-auto px-4 py-6 md:py-8">
+                <div
+                    class="glass-card rounded-2xl p-4 md:p-8 text-center animate-fade-in hero-section"
+                >
+                    <p
+                        id="nextPrayerLabel"
+                        class="text-gold-400 font-medium mb-2 text-lg"
+                    >
+                        Loading...
+                    </p>
+                    <div
+                        id="countdown"
+                        class="countdown-timer font-bold text-4xl md:text-6xl lg:text-7xl text-gold-400 mb-2 countdown-pulse font-mono"
+                    >
+                        --:--:--
+                    </div>
+                    <div
+                        class="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-sm"
+                    >
+                        <span id="currentTime" class="text-cream-200"></span>
+                        <span class="text-gold-400/50 hidden md:inline">•</span>
+                        <span
+                            id="lastUpdated"
+                            class="text-cream-200/70 hidden md:inline"
+                        ></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Message -->
+            <section
+                id="errorSection"
+                class="max-w-4xl mx-auto px-4 pb-4 hidden"
+            >
+                <div
+                    class="glass-card rounded-xl p-4 bg-red-900/30 border-red-500/50"
+                >
+                    <div class="flex items-center gap-3">
+                        <i
+                            data-lucide="alert-triangle"
+                            class="w-5 h-5 text-red-400"
+                        ></i>
+                        <p id="errorMessage" class="text-sm text-red-200"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Date Display -->
+            <section class="max-w-4xl mx-auto px-4 pb-6">
+                <div
+                    class="glass-card rounded-xl p-3 md:p-4 flex flex-wrap items-center justify-center gap-3 md:gap-6"
+                >
+                    <div class="flex items-center gap-2">
+                        <i
+                            data-lucide="calendar-days"
+                            class="w-5 h-5 text-gold-400"
+                        ></i>
+                        <span id="gregorianDate" class="text-sm"
+                            >Loading...</span
+                        >
+                    </div>
+                    <div class="w-px h-6 bg-gold-400/30 hidden md:block"></div>
+                    <div class="flex items-center gap-2">
+                        <i
+                            data-lucide="calendar"
+                            class="w-5 h-5 text-gold-400"
+                        ></i>
+                        <span id="hijriDate" class="text-sm">Loading...</span>
+                    </div>
+                    <div class="w-px h-6 bg-gold-400/30 hidden md:block"></div>
+                    <div class="flex items-center gap-2">
+                        <i
+                            data-lucide="map-pin"
+                            class="w-5 h-5 text-gold-400"
+                        ></i>
+                        <span id="locationDisplay" class="text-sm">Loading...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prayer Times Grid -->
+            <section class="max-w-4xl mx-auto px-4 pb-8">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="clock" class="w-5 h-5 text-gold-400"></i>
+                    <span id="prayerTimesTitle">নামাজের সময়</span>
+                </h2>
+                <div
+                    id="prayerGrid"
+                    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"
+                ></div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="max-w-4xl mx-auto px-4 pb-8">
+                <div class="glass-card rounded-xl p-4 text-center">
+                    <p class="text-sm text-cream-200">
+                        <span id="footerText">আল্লাহ্ই আমাদের জন্য যথেষ্ট</span>
+                    </p>
+                    <p class="text-xs text-gold-400/60 mt-2" id="apiCredit">
+                        Prayer times powered by Aladhan API • Optimized for
+                        Bangladesh
+                    </p>
+                    <p id="ipDisplay" class="text-xs text-gold-400/40 mt-2 font-mono"></p>
+                </div>
+            </footer>
+        </div>
+
+        <script>
+            // ============================================
+            // CONFIGURATION
+            // ============================================
+            const { DateTime } = luxon;
+            const API_BASE = "https://api.aladhan.com/v1";
+
+            // Get timezone from detected location or fallback
+            function getTimezone() {
+                return state.detectedLocation?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dhaka";
+            }
+
+            // Get current time in detected timezone
+            function getLocalNow() {
+                return DateTime.now().setZone(getTimezone());
+            }
+
+            // Format date in specific timezone
+            function formatInTimezone(format, timezone) {
+                return DateTime.now().setZone(timezone).toFormat(format);
+            }
+
+            const cities = {
+                dhaka: { name: "Dhaka", lat: 23.8103, lng: 90.4125 },
+                chittagong: { name: "Chittagong", lat: 22.3569, lng: 91.7832 },
+                sylhet: { name: "Sylhet", lat: 24.8995, lng: 91.8733 },
+                khulna: { name: "Khulna", lat: 22.8456, lng: 89.5403 },
+                barisal: { name: "Barisal", lat: 22.701, lng: 90.3535 },
+                rajshahi: { name: "Rajshahi", lat: 24.3745, lng: 88.6042 },
+                rangpur: { name: "Rangpur", lat: 25.7439, lng: 89.2752 },
+                mymensingh: { name: "Mymensingh", lat: 24.7471, lng: 90.4203 },
+            };
+
+            const PRAYER_ORDER = [
+                "fajr",
+                "sunrise",
+                "dhuhr",
+                "asr",
+                "maghrib",
+                "isha",
+            ];
+
+            const translations = {
+                en: {
+                    loading: "Loading...",
+                    prayerTimes: "Prayer Times",
+                    footer: "Allah is sufficient for us.",
+                    nextPrayer: "Next Prayer",
+                    lastUpdated: "Updated",
+                    errorFetching:
+                        "Using offline prayer times. Some times may be inaccurate.",
+                    apiCredit:
+                        "Prayer times powered by Aladhan API • Optimized for Bangladesh",
+                    detectedLocation: "Detected",
+                    manualLocation: "Manual",
+                    prayers: {
+                        fajr: "Fajr",
+                        sunrise: "Sunrise",
+                        dhuhr: "Dhuhr",
+                        asr: "Asr",
+                        maghrib: "Maghrib",
+                        isha: "Isha",
+                    },
+                    days: [
+                        "Sunday",
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                    ],
+                    months: [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                    ],
+                },
+                bn: {
+                    loading: "লোড হচ্ছে...",
+                    prayerTimes: "নামাজের সময়",
+                    footer: "আল্লাহ্ই আমাদের জন্য যথেষ্ট",
+                    nextPrayer: "পরবর্তী নামাজ",
+                    lastUpdated: "আপডেট",
+                    errorFetching:
+                        "অফলাইন নামাজের সময় ব্যবহার করা হচ্ছে। কিছু সময় সঠিক নাও হতে পারে।",
+                    apiCredit:
+                        "নামাজের সময় Aladhan API দ্বারা • বাংলাদেশের জন্য অপ্টিমাইজড",
+                    detectedLocation: "সনাক্তকৃত",
+                    manualLocation: "ম্যানুয়াল",
+                    prayers: {
+                        fajr: "ফজর",
+                        sunrise: "সূর্যোদয়",
+                        dhuhr: "যোহর",
+                        asr: "আসর",
+                        maghrib: "মাগরিব",
+                        isha: "এশা",
+                    },
+                    days: [
+                        "রবিবার",
+                        "সোমবার",
+                        "মঙ্গলবার",
+                        "বুধবার",
+                        "বৃহস্পতিবার",
+                        "শুক্রবার",
+                        "শনিবার",
+                    ],
+                    months: [
+                        "জানুয়ারি",
+                        "ফেব্রুয়ারি",
+                        "মার্চ",
+                        "এপ্রিল",
+                        "মে",
+                        "জুন",
+                        "জুলাই",
+                        "আগস্ট",
+                        "সেপ্টেম্বর",
+                        "অক্টোবর",
+                        "নভেম্বর",
+                        "ডিসেম্বর",
+                    ],
+                },
+            };
+
+            // ============================================
+            // STATE
+            // ============================================
+            let state = {
+                lang: localStorage.getItem("praybd-lang") || "bn",
+                theme: localStorage.getItem("praybd-theme") || "dark",
+                city: localStorage.getItem("praybd-city") || "dhaka",
+                detectedLocation: null, // { city, lat, lng, country, timezone, ip, detectedAt }
+                locationLoading: true,
+                ipAddress: null,
+                prayerTimes: null,
+                currentPrayer: null,
+                nextPrayer: null,
+                hijriDate: null,
+                lastUpdated: null,
+                isLoading: true,
+            };
+
+            const elements = {};
+
+            // ============================================
+            // INITIALIZATION
+            // ============================================
+            async function init() {
+                cacheElements();
+                setupEventListeners();
+                applyTheme();
+                lucide.createIcons();
+                renderLoadingState();
+
+                // Step 1: Detect location via IP
+                await detectLocation();
+
+                // Step 2: If user has manually selected a city, use that; otherwise use detected
+                const savedCity = localStorage.getItem("praybd-city");
+                if (!savedCity && state.detectedLocation) {
+                    const matchedCity = matchCityToOptions(state.detectedLocation.city);
+                    state.city = matchedCity;
+                    localStorage.setItem("praybd-city", matchedCity);
+                }
+
+                // Update UI with detected location
+                updateLocationDisplay();
+                updateLocationIndicator();
+                updateIpDisplay();
+
+                // Step 3: Fetch prayer times with resolved location
+                fetchAllData();
+
+                // Start intervals
+                setInterval(updateCountdown, 1000);
+                setInterval(updateCurrentTime, 1000);
+                setInterval(updateHijriDateDisplay, 60000);
+                scheduleMidnightRefresh();
+            }
+
+            function renderLoadingState() {
+                // Countdown loading
+                elements.countdown.textContent = "--:--:--";
+                elements.nextPrayerLabel.textContent = translations[state.lang].loading || "Loading...";
+                elements.currentTime.textContent = "";
+
+                // Date loading
+                elements.gregorianDate.textContent = translations[state.lang].loading || "Loading...";
+                elements.hijriDate.textContent = translations[state.lang].loading || "Loading...";
+
+                // Prayer cards skeleton
+                renderPrayerSkeletons();
+            }
+
+            function updateLocationIndicator() {
+                const headerTitle = document.querySelector("h1");
+                if (!headerTitle) return;
+
+                // Remove existing badge
+                const existingBadge = headerTitle.querySelector(".location-badge");
+                if (existingBadge) existingBadge.remove();
+
+                const t = translations[state.lang];
+                const cityName = state.detectedLocation?.city || "Dhaka";
+
+                const badge = document.createElement("span");
+                badge.className = "location-badge text-xs px-2 py-0.5 rounded ml-2 bg-emerald-800 text-emerald-200";
+                badge.textContent = cityName;
+                badge.title = t.detectedLocation;
+
+                headerTitle.appendChild(badge);
+            }
+
+            function cacheElements() {
+                elements.langToggle = document.getElementById("langToggle");
+                elements.themeToggle = document.getElementById("themeToggle");
+                elements.locationDisplay = document.getElementById("locationDisplay");
+                elements.ipDisplay = document.getElementById("ipDisplay");
+                elements.prayerGrid = document.getElementById("prayerGrid");
+                elements.countdown = document.getElementById("countdown");
+                elements.nextPrayerLabel =
+                    document.getElementById("nextPrayerLabel");
+                elements.currentTime = document.getElementById("currentTime");
+                elements.lastUpdated = document.getElementById("lastUpdated");
+                elements.gregorianDate =
+                    document.getElementById("gregorianDate");
+                elements.hijriDate = document.getElementById("hijriDate");
+                elements.errorSection = document.getElementById("errorSection");
+                elements.errorMessage = document.getElementById("errorMessage");
+                elements.apiCredit = document.getElementById("apiCredit");
+            }
+
+            function setupEventListeners() {
+                elements.langToggle.addEventListener("click", toggleLanguage);
+                elements.themeToggle.addEventListener("click", toggleTheme);
+            }
+
+            function updateLocationDisplay() {
+                if (!elements.locationDisplay) return;
+
+                // Use API data directly - city and country_code from ipapi
+                const cityName = state.detectedLocation?.city || "";
+                const countryCode = state.detectedLocation?.country || "";
+
+                elements.locationDisplay.textContent = `${cityName}, ${countryCode}`;
+            }
+
+            function updateIpDisplay() {
+                if (!elements.ipDisplay) return;
+
+                const ip = state.ipAddress || state.detectedLocation?.ip;
+                if (ip) {
+                    // Show full IP address
+                    elements.ipDisplay.textContent = `Connected via: ${ip}`;
+                } else {
+                    elements.ipDisplay.textContent = "";
+                }
+            }
+
+            function applyTheme() {
+                if (state.theme === "light")
+                    document.documentElement.classList.add("light");
+            }
+
+            // ============================================
+            // IP GEOLOCATION
+            // ============================================
+            async function detectLocation() {
+                const cacheKey = "praybd-detected-location";
+                const cacheDuration = 24 * 60 * 60 * 1000; // 24 hours
+
+                // Check cache first
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    try {
+                        const parsed = JSON.parse(cached);
+                        if (parsed.detectedAt && (Date.now() - parsed.detectedAt < cacheDuration)) {
+                            state.detectedLocation = parsed;
+                            state.locationLoading = false;
+                            return parsed;
+                        }
+                    } catch (e) {
+                        localStorage.removeItem(cacheKey);
+                    }
+                }
+
+                // Try IP geolocation
+                try {
+                    // Using ipapi.co (supports HTTPS, 30k/month free)
+                    const response = await fetch("https://ipapi.co/json/");
+                    if (response.ok) {
+                        const data = await response.json();
+                        const locationData = {
+                            city: data.city || "Dhaka",
+                            lat: data.latitude || 23.8103,
+                            lng: data.longitude || 90.4125,
+                            country: data.country_code || "BD",
+                            timezone: data.timezone || "Asia/Dhaka",
+                            ip: data.ip || null,
+                            detectedAt: Date.now()
+                        };
+
+                        // Cache the result
+                        localStorage.setItem(cacheKey, JSON.stringify(locationData));
+                        state.detectedLocation = locationData;
+                        state.ipAddress = locationData.ip;
+                        state.locationLoading = false;
+                        return locationData;
+                    }
+                } catch (error) {
+                    console.warn("IP geolocation failed, using fallback:", error);
+                }
+
+                // Fallback to default
+                const fallback = {
+                    city: "Dhaka",
+                    lat: 23.8103,
+                    lng: 90.4125,
+                    country: "BD",
+                    timezone: "Asia/Dhaka",
+                    ip: null,
+                    detectedAt: Date.now()
+                };
+                state.detectedLocation = fallback;
+                state.ipAddress = fallback.ip;
+                state.locationLoading = false;
+                return fallback;
+            }
+
+            // Match detected city to our predefined cities
+            function matchCityToOptions(detectedCity) {
+                if (!detectedCity) return "dhaka";
+
+                const cityLower = detectedCity.toLowerCase();
+                const cityKeys = Object.keys(cities);
+
+                // Try exact match first
+                for (const key of cityKeys) {
+                    if (cityLower === key || cityLower === cities[key].name.toLowerCase()) {
+                        return key;
+                    }
+                }
+
+                // Try partial match
+                for (const key of cityKeys) {
+                    if (cities[key].name.toLowerCase().includes(cityLower) ||
+                        cityLower.includes(cities[key].name.toLowerCase())) {
+                        return key;
+                    }
+                }
+
+                // Default to Dhaka
+                return "dhaka";
+            }
+
+            // ============================================
+            // DATA FETCHING
+            // ============================================
+            async function fetchAllData() {
+                state.isLoading = true;
+                hideError();
+                try {
+                    await Promise.all([fetchPrayerTimes(), fetchHijriDate()]);
+                    state.lastUpdated = DateTime.now();
+                    updateLastUpdatedDisplay();
+                    state.isLoading = false;
+                } catch (error) {
+                    showError(translations[state.lang].errorFetching);
+                    state.isLoading = false;
+                }
+            }
+
+            async function fetchPrayerTimes() {
+                const city = cities[state.city];
+                const date = DateTime.now();
+                const dateStr = `${date.day}-${date.month}-${date.year}`;
+
+                // Use detected location coordinates if available, otherwise use city coordinates
+                const lat = state.detectedLocation?.lat || city.lat;
+                const lng = state.detectedLocation?.lng || city.lng;
+                const locationKey = `${lat.toFixed(2)}-${lng.toFixed(2)}`;
+                const cacheKey = `prayertimes-${locationKey}-${dateStr}`;
+
+                // Check cache
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.date === dateStr && parsed.timestamp) {
+                        const cacheAge = Date.now() - parsed.timestamp;
+                        if (cacheAge < 24 * 60 * 60 * 1000) {
+                            state.prayerTimes = parsed.times;
+                            updatePrayerDisplay();
+                            return;
+                        }
+                    }
+                }
+
+                try {
+                    // Primary: Aladhan API with coordinates for better accuracy
+                    const response = await fetch(
+                        `${API_BASE}/timings/${dateStr}?latitude=${lat}&longitude=${lng}&method=1&school=1&timetype=24`,
+                    );
+
+                    if (!response.ok) throw new Error("API request failed");
+
+                    const data = await response.json();
+
+                    if (data.code === 200 && data.data) {
+                        const t = data.data.timings;
+                        state.prayerTimes = {
+                            fajr: t.Fajr,
+                            sunrise: t.Sunrise,
+                            dhuhr: t.Dhuhr,
+                            asr: t.Asr,
+                            maghrib: t.Maghrib,
+                            isha: t.Isha,
+                        };
+
+                        localStorage.setItem(
+                            cacheKey,
+                            JSON.stringify({
+                                date: dateStr,
+                                times: state.prayerTimes,
+                                timestamp: Date.now(),
+                            }),
+                        );
+
+                        updatePrayerDisplay();
+                    }
+                } catch (error) {
+                    console.error("Aladhan failed, using fallback:", error);
+                    state.prayerTimes = calculateFallbackTimes();
+                    updatePrayerDisplay();
+                }
+            }
+
+            async function fetchHijriDate() {
+                const now = DateTime.now();
+                const dateStr = `${now.day}-${now.month}-${now.year}`;
+
+                try {
+                    const response = await fetch(`${API_BASE}/gToH/${dateStr}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.data && data.data.hijri) {
+                            state.hijriDate = data.data.hijri;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching Hijri date:", error);
+                }
+                updateHijriDateDisplay();
+            }
+
+            function calculateFallbackTimes() {
+                const now = DateTime.now();
+                const month = now.month;
+                const isSummer = month >= 4 && month <= 9;
+
+                // Base times for Hanafi in Bangladesh (approximate)
+                const baseTimes = {
+                    fajr: isSummer ? "04:30" : "04:50",
+                    sunrise: isSummer ? "05:15" : "05:35",
+                    dhuhr: "12:00",
+                    asr: isSummer ? "15:45" : "16:00", // Hanafi Asr
+                    maghrib: isSummer ? "18:30" : "18:10",
+                    isha: isSummer ? "19:45" : "19:30",
+                };
+
+                return baseTimes;
+            }
+
+            // ============================================
+            // PRAYER CALCULATIONS
+            // ============================================
+            function updatePrayerDisplay() {
+                if (!state.prayerTimes) return;
+                // Next prayer is now calculated dynamically in updateCountdown
+                renderPrayerCards();
+                updateCountdown();
+                updateDates();
+                updateHijriDateDisplay();
+            }
+
+            function determineCurrentNextPrayer() {
+                const now = getLocalNow();
+                const currentMinutes = now.hour * 60 + now.minute;
+
+                const prayersWithMins = PRAYER_ORDER.map((key) => ({
+                    key,
+                    name: translations[state.lang].prayers[key],
+                    time: state.prayerTimes[key],
+                    minutes: timeToMinutes(state.prayerTimes[key]),
+                    icon: getPrayerIcon(key),
+                })).filter((p) => p.key !== "sunrise");
+
+                let currentIdx = -1;
+                let nextIdx = 0;
+
+                for (let i = 0; i < prayersWithMins.length; i++) {
+                    if (currentMinutes >= prayersWithMins[i].minutes)
+                        currentIdx = i;
+                    else if (nextIdx === i && currentIdx < i) nextIdx = i;
+                }
+
+                if (currentIdx === prayersWithMins.length - 1) nextIdx = 0;
+
+                state.currentPrayer =
+                    currentIdx >= 0 ? prayersWithMins[currentIdx] : null;
+                state.nextPrayer = prayersWithMins[nextIdx];
+            }
+
+            function timeToMinutes(timeStr) {
+                if (!timeStr) return 0;
+                const [h, m] = timeStr.split(":").map(Number);
+                return h * 60 + m;
+            }
+
+            // Convert 24-hour time string to 12-hour format with AM/PM
+            function format12Hour(timeStr) {
+                if (!timeStr) return "--:--";
+                const [h, m] = timeStr.split(":").map(Number);
+                const date = new Date();
+                date.setHours(h, m, 0, 0);
+                return date.toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                });
+            }
+
+            // Convert time for display (12-hour with optional Bangla numerals)
+            function formatTime(timeStr) {
+                if (!timeStr) return "--:--";
+                const time12 = format12Hour(timeStr);
+                if (state.lang === "bn") {
+                    const bnDigits = [
+                        "০",
+                        "১",
+                        "২",
+                        "৩",
+                        "৪",
+                        "৫",
+                        "৬",
+                        "৭",
+                        "৮",
+                        "৯",
+                    ];
+                    const toBn = (n) =>
+                        n
+                            .toString()
+                            .split("")
+                            .map((d) => bnDigits[parseInt(d)])
+                            .join("");
+                    // Convert numbers and AM/PM to Bangla
+                    return time12
+                        .replace(/\d+/g, (match) => toBn(match))
+                        .replace("AM", "এ এম")
+                        .replace("PM", "পি এম");
+                }
+                return time12;
+            }
+
+            function getPrayerIcon(key) {
+                const icons = {
+                    fajr: "sunrise",
+                    sunrise: "sun",
+                    dhuhr: "sun",
+                    asr: "cloud-sun",
+                    maghrib: "sunset",
+                    isha: "moon",
+                };
+                return icons[key] || "clock";
+            }
+
+            // ============================================
+            // RENDERING
+            // ============================================
+            function renderPrayerSkeletons() {
+                const t = translations[state.lang].prayers;
+                elements.prayerGrid.innerHTML = PRAYER_ORDER.map(
+                    (key) => `
+                    <div class="prayer-card glass-card rounded-xl p-4 skeleton">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-4 h-4 rounded bg-gold-400/30"></div>
+                            <div class="h-4 w-16 rounded bg-gold-400/30"></div>
+                        </div>
+                        <div class="h-8 w-20 rounded bg-gold-400/30"></div>
+                    </div>
+                `,
+                ).join("");
+            }
+
+            function renderPrayerCards() {
+                if (!state.prayerTimes) return;
+
+                const t = translations[state.lang].prayers;
+                const prayers = PRAYER_ORDER.map((key) => ({
+                    key,
+                    name: t[key],
+                    time: state.prayerTimes[key],
+                    icon: getPrayerIcon(key),
+                }));
+
+                const now = getLocalNow();
+                const currentMinutes = now.hour * 60 + now.minute;
+
+                // Dynamic calculation: find current and next based on actual time
+                const prayerKeys = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+                let currentIdx = -1;
+                let nextIdx = -1;
+
+                for (let i = 0; i < prayerKeys.length; i++) {
+                    const mins = timeToMinutes(state.prayerTimes[prayerKeys[i]]);
+                    if (currentMinutes >= mins) {
+                        currentIdx = i;
+                    } else if (nextIdx === -1) {
+                        nextIdx = i;
+                    }
+                }
+
+                // If we're after Isha, next is Fajr (tomorrow)
+                if (nextIdx === -1) nextIdx = 0;
+
+                state.currentPrayer = currentIdx >= 0
+                    ? { key: prayerKeys[currentIdx], name: t[prayerKeys[currentIdx]], time: state.prayerTimes[prayerKeys[currentIdx]] }
+                    : null;
+                state.nextPrayer = {
+                    key: prayerKeys[nextIdx],
+                    name: t[prayerKeys[nextIdx]],
+                    time: state.prayerTimes[prayerKeys[nextIdx]]
+                };
+
+                elements.prayerGrid.innerHTML = prayers
+                    .map((prayer) => {
+                        const isPrayer = prayer.key !== "sunrise";
+                        const prayerIdx = prayerKeys.indexOf(prayer.key);
+                        const isActive = isPrayer && prayerIdx === currentIdx;
+                        const isNext = isPrayer && prayerIdx === nextIdx;
+                        const timeLeft = isNext && !isActive
+                            ? getTimeRemaining(prayer.time)
+                            : "";
+                        const label = isActive
+                            ? state.lang === "bn"
+                                ? "বর্তমান"
+                                : "Current"
+                            : "";
+
+                        return `
+                        <div class="prayer-card glass-card rounded-xl p-4 ${isActive ? "active" : ""} ${isNext && !isActive ? "ring-2 ring-gold-400/50" : ""}">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="${prayer.icon}" class="w-4 h-4 text-gold-400"></i>
+                                <span class="text-sm font-medium">${prayer.name}</span>
+                                ${isActive ? `<span class="ml-auto text-xs bg-gold-500 text-emerald-950 px-2 py-0.5 rounded">${label}</span>` : ""}
+                            </div>
+                            <div class="text-2xl font-bold text-gold-400">${formatTime(prayer.time)}</div>
+                            ${isNext && timeLeft && !isActive ? `<div class="text-xs text-cream-200 mt-1">${timeLeft}</div>` : ""}
+                        </div>
+                    `;
+                    })
+                    .join("");
+
+                lucide.createIcons();
+            }
+
+            function getTimeRemaining(timeStr) {
+                const now = getLocalNow();
+                const [h, m] = timeStr.split(":").map(Number);
+                let target = DateTime.now()
+                    .setZone(getTimezone())
+                    .set({ hour: h, minute: m, second: 0 });
+                if (target < now) target = target.plus({ days: 1 });
+                const diff = target.diff(now, ["hours", "minutes"]).toObject();
+                const hours = Math.floor(diff.hours);
+                const mins = Math.floor(diff.minutes);
+                if (state.lang === "bn") {
+                    const bnDigits = [
+                        "০",
+                        "১",
+                        "২",
+                        "৩",
+                        "৪",
+                        "৫",
+                        "৬",
+                        "৭",
+                        "৮",
+                        "৯",
+                    ];
+                    const toBn = (n) =>
+                        n
+                            .toString()
+                            .split("")
+                            .map((d) => bnDigits[parseInt(d)])
+                            .join("");
+                    return `${toBn(hours)} ঘণ্টা ${toBn(mins)} মিনিট`;
+                }
+                return `${hours}h ${mins}m`;
+            }
+
+            // ============================================
+            // COUNTDOWN & TIME
+            // ============================================
+
+            // Get next prayer based on current time
+            function getNextPrayerInfo() {
+                if (!state.prayerTimes) return null;
+
+                const now = getLocalNow();
+                const currentMinutes = now.hour * 60 + now.minute;
+
+                // Only consider actual prayer times (exclude sunrise)
+                const prayerKeys = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+                const prayerNames = translations[state.lang].prayers;
+
+                for (let i = 0; i < prayerKeys.length; i++) {
+                    const key = prayerKeys[i];
+                    const prayerTime = state.prayerTimes[key];
+                    if (!prayerTime) continue;
+
+                    const prayerMinutes = timeToMinutes(prayerTime);
+                    if (currentMinutes < prayerMinutes) {
+                        return {
+                            key: key,
+                            name: prayerNames[key],
+                            time: prayerTime,
+                            isTomorrow: false
+                        };
+                    }
+                }
+
+                // All prayers passed today - use tomorrow's Fajr
+                // For now, return Fajr (will be handled by midnight refresh)
+                return {
+                    key: "fajr",
+                    name: prayerNames.fajr,
+                    time: state.prayerTimes.fajr,
+                    isTomorrow: true
+                };
+            }
+
+            function updateCountdown() {
+                if (!state.prayerTimes) return;
+
+                // Dynamically determine next prayer each second
+                const nextInfo = getNextPrayerInfo();
+                if (!nextInfo) return;
+
+                state.nextPrayer = nextInfo;
+
+                const now = getLocalNow();
+                const [h, m] = nextInfo.time.split(":").map(Number);
+                let target = now.set({ hour: h, minute: m, second: 0 });
+
+                // Handle case when target time has passed (countdown reached zero or past)
+                if (target <= now) {
+                    target = target.plus({ days: 1 });
+                }
+
+                const diff = target
+                    .diff(now, ["hours", "minutes", "seconds"])
+                    .toObject();
+                const hours = String(Math.floor(diff.hours)).padStart(2, "0");
+                const mins = String(Math.floor(diff.minutes)).padStart(2, "0");
+                const secs = String(Math.floor(diff.seconds)).padStart(2, "0");
+
+                // Convert to Bangla if needed
+                let displayTime;
+                if (state.lang === "bn") {
+                    const bnDigits = [
+                        "০",
+                        "১",
+                        "২",
+                        "৩",
+                        "৪",
+                        "৫",
+                        "৬",
+                        "৭",
+                        "৮",
+                        "৯",
+                    ];
+                    const toBn = (n) =>
+                        n
+                            .toString()
+                            .split("")
+                            .map((d) => bnDigits[parseInt(d)])
+                            .join("");
+                    displayTime = `${toBn(hours)}:${toBn(mins)}:${toBn(secs)}`;
+                } else {
+                    displayTime = `${hours}:${mins}:${secs}`;
+                }
+
+                elements.countdown.textContent = displayTime;
+
+                const t = translations[state.lang];
+                const tomorrowLabel = nextInfo.isTomorrow ? ` (${state.lang === "bn" ? "আগামীকাল" : "Tomorrow"})` : "";
+                elements.nextPrayerLabel.textContent = `${t.nextPrayer}: ${nextInfo.name}${tomorrowLabel}`;
+            }
+
+            function updateCurrentTime() {
+                const now = getLocalNow();
+                const timeStr = now.toFormat("hh:mm:ss a");
+                if (state.lang === "bn") {
+                    const bnDigits = [
+                        "০",
+                        "১",
+                        "২",
+                        "৩",
+                        "৪",
+                        "৫",
+                        "৬",
+                        "৭",
+                        "৮",
+                        "৯",
+                    ];
+                    const toBn = (n) =>
+                        n
+                            .toString()
+                            .split("")
+                            .map((d) => bnDigits[parseInt(d)])
+                            .join("");
+                    // Convert only the time part, keep AM/PM as is
+                    const parts = timeStr.split(" ");
+                    const timePart = parts[0]
+                        .split(":")
+                        .map((t) => toBn(t))
+                        .join(":");
+                    elements.currentTime.textContent = `${timePart} ${parts[1] === "AM" ? "এ এম" : "পি এম"}`;
+                } else {
+                    elements.currentTime.textContent = timeStr;
+                }
+            }
+
+            function updateLastUpdatedDisplay() {
+                if (!state.lastUpdated) return;
+                const t = translations[state.lang];
+                const timeStr = state.lastUpdated.toFormat("hh:mm a");
+                elements.lastUpdated.textContent = `${t.lastUpdated}: ${timeStr}`;
+            }
+
+            // ============================================
+            // DATE DISPLAYS
+            // ============================================
+            function updateDates() {
+                const now = getLocalNow();
+                const t = translations[state.lang];
+                const dayName = t.days[now.weekday % 7];
+                const monthName = t.months[now.month - 1];
+                elements.gregorianDate.textContent = `${dayName}, ${monthName} ${now.day}, ${now.year}`;
+                updateHijriDateDisplay();
+            }
+
+            function updateHijriDateDisplay() {
+                const now = getLocalNow();
+                let hijriOffset = 0;
+
+                if (state.prayerTimes && state.prayerTimes.maghrib) {
+                    const [h, m] = state.prayerTimes.maghrib
+                        .split(":")
+                        .map(Number);
+                    const maghribTime = now.set({ hour: h, minute: m });
+                    if (now > maghribTime) hijriOffset = 1;
+                }
+
+                if (state.hijriDate) {
+                    let day = parseInt(state.hijriDate.day) + hijriOffset;
+                    let month = state.hijriDate.month.en;
+                    let year = state.hijriDate.year;
+
+                    const monthLengths = {
+                        Muharram: 30,
+                        Safar: 29,
+                        "Rabi al-Awwal": 30,
+                        "Rabi al-Thani": 29,
+                        "Jumada al-Awwal": 30,
+                        "Jumada al-Thani": 29,
+                        Rajab: 30,
+                        "Sha'ban": 29,
+                        Ramadan: 30,
+                        Shawwal: 29,
+                        "Dhu al-Qidah": 30,
+                        "Dhu al-Hijjah": 29,
+                    };
+
+                    const maxDay = monthLengths[month] || 30;
+                    if (day > maxDay) {
+                        day = 1;
+                        const months = Object.keys(monthLengths);
+                        const idx = months.indexOf(month);
+                        if (idx < 11) month = months[idx + 1];
+                        else {
+                            month = "Muharram";
+                            year++;
+                        }
+                    }
+
+                    elements.hijriDate.textContent = `${day} ${month}, ${year} AH`;
+                } else {
+                    const hijriYear =
+                        Math.floor(
+                            (now.toMillis() -
+                                new Date("2024-07-08").getTime()) /
+                                (1000 * 60 * 60 * 24) /
+                                354.37,
+                        ) +
+                        1445 +
+                        hijriOffset;
+                    elements.hijriDate.textContent = `${now.day} ${translations[state.lang].months[now.month - 1]}, ${hijriYear} ${state.lang === "bn" ? "হিজরি" : "AH"}`;
+                }
+            }
+
+            // ============================================
+            // MIDNIGHT REFRESH
+            // ============================================
+            function scheduleMidnightRefresh() {
+                const now = getLocalNow();
+                const tomorrow = now
+                    .plus({ days: 1 })
+                    .set({ hour: 0, minute: 0, second: 5 });
+                setTimeout(() => {
+                    fetchAllData();
+                    scheduleMidnightRefresh();
+                }, tomorrow.diff(now).toMillis());
+            }
+
+            // ============================================
+            // EVENT HANDLERS
+            // ============================================
+            function toggleLanguage() {
+                state.lang = state.lang === "en" ? "bn" : "en";
+                localStorage.setItem("praybd-lang", state.lang);
+                updateLanguageUI();
+            }
+
+            function toggleTheme() {
+                state.theme = state.theme === "dark" ? "light" : "dark";
+                localStorage.setItem("praybd-theme", state.theme);
+                document.documentElement.classList.toggle("light");
+            }
+
+            function updateLanguageUI() {
+                const t = translations[state.lang];
+                document.getElementById("prayerTimesTitle").textContent =
+                    t.prayerTimes;
+                document.getElementById("footerText").textContent = t.footer;
+                document.getElementById("apiCredit").textContent = t.apiCredit;
+                renderPrayerCards();
+                updateDates();
+                updateCountdown();
+                updateLocationDisplay();
+                updateLocationIndicator();
+                updateIpDisplay();
+            }
+
+            function showError(message) {
+                elements.errorMessage.textContent = message;
+                elements.errorSection.classList.remove("hidden");
+            }
+
+            function hideError() {
+                elements.errorSection.classList.add("hidden");
+            }
+
+            // Start
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", init);
+            } else {
+                init();
+            }
+        </script>
+    </body>
+</html>
