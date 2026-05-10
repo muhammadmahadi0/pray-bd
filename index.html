@@ -286,22 +286,11 @@
                         <span id="hijriDate" class="text-sm">Loading...</span>
                     </div>
                     <div class="w-px h-6 bg-gold-400/30 hidden md:block"></div>
-                    <!-- Location Display with Dropdown -->
+                    <!-- Auto-detected Location Display -->
                     <div class="flex items-center gap-2 flex-wrap justify-center">
-                        <span id="detectedLocation" class="text-sm font-medium text-emerald-400"></span>
-                        <select
-                            id="citySelect"
-                            class="bg-transparent border border-gold-400/30 rounded px-2 py-1 text-sm text-gold-400 focus:outline-none focus:border-gold-400 cursor-pointer"
-                        >
-                            <option value="dhaka">Dhaka</option>
-                            <option value="chittagong">Chittagong</option>
-                            <option value="sylhet">Sylhet</option>
-                            <option value="khulna">Khulna</option>
-                            <option value="barisal">Barisal</option>
-                            <option value="rajshahi">Rajshahi</option>
-                            <option value="rangpur">Rangpur</option>
-                            <option value="mymensingh">Mymensingh</option>
-                        </select>
+                        <i data-lucide="map-pin" class="w-4 h-4 text-gold-400"></i>
+                        <span id="detectedLocation" class="text-sm font-medium text-emerald-300"></span>
+                        <span id="autoBadge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-800 text-emerald-300 border border-emerald-700/50">Auto-detected</span>
                     </div>
                 </div>
             </section>
@@ -557,9 +546,7 @@
             function cacheElements() {
                 elements.langToggle = document.getElementById("langToggle");
                 elements.themeToggle = document.getElementById("themeToggle");
-                elements.locationDisplay = document.getElementById("locationDisplay");
                 elements.detectedLocation = document.getElementById("detectedLocation");
-                elements.citySelect = document.getElementById("citySelect");
                 elements.ipDisplay = document.getElementById("ipDisplay");
                 elements.prayerGrid = document.getElementById("prayerGrid");
                 elements.countdown = document.getElementById("countdown");
@@ -578,40 +565,21 @@
             function setupEventListeners() {
                 elements.langToggle.addEventListener("click", toggleLanguage);
                 elements.themeToggle.addEventListener("click", toggleTheme);
-                // City selection dropdown
-                elements.citySelect = document.getElementById("citySelect");
-                if (elements.citySelect) {
-                    elements.citySelect.addEventListener("change", handleCityChange);
-                }
-            }
-
-            function handleCityChange(e) {
-                const newCity = e.target.value;
-                state.city = newCity;
-                localStorage.setItem("praybd-city", newCity);
-                // Update display to show manual override
-                const detectedEl = document.getElementById("detectedLocation");
-                if (detectedEl) {
-                    const cityName = cities[newCity]?.name || newCity;
-                    detectedEl.textContent = `📍 ${cityName}`;
-                }
-                // Fetch new prayer times
-                fetchAllData();
             }
 
             function updateLocationDisplay() {
-                // Update detected location display (prominent)
+                // Update detected location display (prominent and beautiful)
                 const detectedEl = document.getElementById("detectedLocation");
                 if (detectedEl) {
                     const cityName = state.detectedLocation?.city || "Dhaka";
-                    const countryCode = state.detectedLocation?.country || "BD";
-                    detectedEl.textContent = `📍 ${cityName}, ${countryCode}`;
+                    const country = state.detectedLocation?.country === "BD" ? "Bangladesh" : state.detectedLocation?.country || "Bangladesh";
+                    detectedEl.textContent = `${cityName}, ${country}`;
                 }
 
-                // Update city select to match current city
-                const citySelect = document.getElementById("citySelect");
-                if (citySelect) {
-                    citySelect.value = state.city;
+                // Show auto-detected badge
+                const autoBadge = document.getElementById("autoBadge");
+                if (autoBadge) {
+                    autoBadge.classList.remove("hidden");
                 }
             }
 
@@ -654,9 +622,8 @@
                     }
                 }
 
-                // Try IP geolocation
+                // Try IP geolocation - Primary: ipapi.co
                 try {
-                    // Using ipapi.co (supports HTTPS, 30k/month free)
                     const response = await fetch("https://ipapi.co/json/");
                     if (response.ok) {
                         const data = await response.json();
@@ -678,10 +645,37 @@
                         return locationData;
                     }
                 } catch (error) {
-                    console.warn("IP geolocation failed, using fallback:", error);
+                    console.warn("ipapi.co failed, trying fallback:", error);
                 }
 
-                // Fallback to default
+                // Fallback: ip-api.com
+                try {
+                    const response = await fetch("http://ip-api.com/json");
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === "success") {
+                            const locationData = {
+                                city: data.city || "Dhaka",
+                                lat: data.lat || 23.8103,
+                                lng: data.lon || 90.4125,
+                                country: data.countryCode || "BD",
+                                timezone: data.timezone || "Asia/Dhaka",
+                                ip: data.query || null,
+                                detectedAt: Date.now()
+                            };
+
+                            localStorage.setItem(cacheKey, JSON.stringify(locationData));
+                            state.detectedLocation = locationData;
+                            state.ipAddress = locationData.ip;
+                            state.locationLoading = false;
+                            return locationData;
+                        }
+                    }
+                } catch (error) {
+                    console.warn("ip-api.com failed, using fallback:", error);
+                }
+
+                // Final fallback to default
                 const fallback = {
                     city: "Dhaka",
                     lat: 23.8103,
@@ -703,6 +697,23 @@
 
                 const cityLower = detectedCity.toLowerCase();
                 const cityKeys = Object.keys(cities);
+
+                // Dhaka area mapping - areas that should map to Dhaka
+                const dhakaAreas = ["mirpur", "gazipur", "uttara", "savar", "tongi", "narayanganj", "keraniganj"];
+                if (dhakaAreas.some(area => cityLower.includes(area))) {
+                    return "dhaka";
+                }
+
+                // Sylhet area mapping
+                const sylhetAreas = ["sylhet", "zindabazar"];
+                if (sylhetAreas.some(area => cityLower.includes(area))) {
+                    return "sylhet";
+                }
+
+                // Chittagong/Chattogram mapping
+                if (cityLower.includes("chattogram") || cityLower.includes("chittagong")) {
+                    return "chittagong";
+                }
 
                 // Try exact match first
                 for (const key of cityKeys) {
