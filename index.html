@@ -286,12 +286,22 @@
                         <span id="hijriDate" class="text-sm">Loading...</span>
                     </div>
                     <div class="w-px h-6 bg-gold-400/30 hidden md:block"></div>
-                    <div class="flex items-center gap-2">
-                        <i
-                            data-lucide="map-pin"
-                            class="w-5 h-5 text-gold-400"
-                        ></i>
-                        <span id="locationDisplay" class="text-sm">Loading...</span>
+                    <!-- Location Display with Dropdown -->
+                    <div class="flex items-center gap-2 flex-wrap justify-center">
+                        <span id="detectedLocation" class="text-sm font-medium text-emerald-400"></span>
+                        <select
+                            id="citySelect"
+                            class="bg-transparent border border-gold-400/30 rounded px-2 py-1 text-sm text-gold-400 focus:outline-none focus:border-gold-400 cursor-pointer"
+                        >
+                            <option value="dhaka">Dhaka</option>
+                            <option value="chittagong">Chittagong</option>
+                            <option value="sylhet">Sylhet</option>
+                            <option value="khulna">Khulna</option>
+                            <option value="barisal">Barisal</option>
+                            <option value="rajshahi">Rajshahi</option>
+                            <option value="rangpur">Rangpur</option>
+                            <option value="mymensingh">Mymensingh</option>
+                        </select>
                     </div>
                 </div>
             </section>
@@ -499,7 +509,6 @@
 
                 // Update UI with detected location
                 updateLocationDisplay();
-                updateLocationIndicator();
                 updateIpDisplay();
 
                 // Step 3: Fetch prayer times with resolved location
@@ -549,6 +558,8 @@
                 elements.langToggle = document.getElementById("langToggle");
                 elements.themeToggle = document.getElementById("themeToggle");
                 elements.locationDisplay = document.getElementById("locationDisplay");
+                elements.detectedLocation = document.getElementById("detectedLocation");
+                elements.citySelect = document.getElementById("citySelect");
                 elements.ipDisplay = document.getElementById("ipDisplay");
                 elements.prayerGrid = document.getElementById("prayerGrid");
                 elements.countdown = document.getElementById("countdown");
@@ -567,16 +578,41 @@
             function setupEventListeners() {
                 elements.langToggle.addEventListener("click", toggleLanguage);
                 elements.themeToggle.addEventListener("click", toggleTheme);
+                // City selection dropdown
+                elements.citySelect = document.getElementById("citySelect");
+                if (elements.citySelect) {
+                    elements.citySelect.addEventListener("change", handleCityChange);
+                }
+            }
+
+            function handleCityChange(e) {
+                const newCity = e.target.value;
+                state.city = newCity;
+                localStorage.setItem("praybd-city", newCity);
+                // Update display to show manual override
+                const detectedEl = document.getElementById("detectedLocation");
+                if (detectedEl) {
+                    const cityName = cities[newCity]?.name || newCity;
+                    detectedEl.textContent = `📍 ${cityName}`;
+                }
+                // Fetch new prayer times
+                fetchAllData();
             }
 
             function updateLocationDisplay() {
-                if (!elements.locationDisplay) return;
+                // Update detected location display (prominent)
+                const detectedEl = document.getElementById("detectedLocation");
+                if (detectedEl) {
+                    const cityName = state.detectedLocation?.city || "Dhaka";
+                    const countryCode = state.detectedLocation?.country || "BD";
+                    detectedEl.textContent = `📍 ${cityName}, ${countryCode}`;
+                }
 
-                // Use API data directly - city and country_code from ipapi
-                const cityName = state.detectedLocation?.city || "";
-                const countryCode = state.detectedLocation?.country || "";
-
-                elements.locationDisplay.textContent = `${cityName}, ${countryCode}`;
+                // Update city select to match current city
+                const citySelect = document.getElementById("citySelect");
+                if (citySelect) {
+                    citySelect.value = state.city;
+                }
             }
 
             function updateIpDisplay() {
@@ -1281,7 +1317,6 @@
                 updateDates();
                 updateCountdown();
                 updateLocationDisplay();
-                updateLocationIndicator();
                 updateIpDisplay();
             }
 
