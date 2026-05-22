@@ -753,7 +753,7 @@
 
             async function fetchPrayerTimes() {
                 const city = cities[state.city];
-                const date = DateTime.now();
+                const date = getLocalNow();
                 const dateStr = `${date.day}-${date.month}-${date.year}`;
 
                 // Use detected location coordinates if available, otherwise use city coordinates
@@ -797,6 +797,12 @@
                             isha: t.Isha,
                         };
 
+                        // Extract Hijri date from timings response (timezone-aware)
+                        if (data.data.hijri) {
+                            state.hijriDate = data.data.hijri;
+                            updateHijriDateDisplay();
+                        }
+
                         localStorage.setItem(
                             cacheKey,
                             JSON.stringify({
@@ -816,7 +822,13 @@
             }
 
             async function fetchHijriDate() {
-                const now = DateTime.now();
+                // Already have Hijri date from timings response
+                if (state.hijriDate) {
+                    updateHijriDateDisplay();
+                    return;
+                }
+
+                const now = getLocalNow();
                 const dateStr = `${now.day}-${now.month}-${now.year}`;
 
                 try {
@@ -1047,9 +1059,7 @@
             function getTimeRemaining(timeStr) {
                 const now = getLocalNow();
                 const [h, m] = timeStr.split(":").map(Number);
-                let target = DateTime.now()
-                    .setZone(getTimezone())
-                    .set({ hour: h, minute: m, second: 0 });
+                let target = now.set({ hour: h, minute: m, second: 0 });
                 if (target < now) target = target.plus({ days: 1 });
                 const diff = target.diff(now, ["hours", "minutes"]).toObject();
                 const hours = Math.floor(diff.hours);
@@ -1232,18 +1242,9 @@
 
             function updateHijriDateDisplay() {
                 const now = getLocalNow();
-                let hijriOffset = 0;
-
-                if (state.prayerTimes && state.prayerTimes.maghrib) {
-                    const [h, m] = state.prayerTimes.maghrib
-                        .split(":")
-                        .map(Number);
-                    const maghribTime = now.set({ hour: h, minute: m });
-                    if (now > maghribTime) hijriOffset = 1;
-                }
 
                 if (state.hijriDate) {
-                    let day = parseInt(state.hijriDate.day) + hijriOffset;
+                    let day = parseInt(state.hijriDate.day);
                     let month = state.hijriDate.month.en;
                     let year = state.hijriDate.year;
 
@@ -1283,8 +1284,7 @@
                                 (1000 * 60 * 60 * 24) /
                                 354.37,
                         ) +
-                        1445 +
-                        hijriOffset;
+                        1445;
                     elements.hijriDate.textContent = `${now.day} ${translations[state.lang].months[now.month - 1]}, ${hijriYear} ${state.lang === "bn" ? "হিজরি" : "AH"}`;
                 }
             }
