@@ -1,0 +1,96 @@
+:root {
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-card: #111111;
+    --text-primary: #fdfbf7;
+    --text-secondary: #a3a3a3;
+    --accent-gold: #d4af37;
+    --accent-green: #047857;
+}
+.light {
+    --bg-primary: #fdfbf7;
+    --bg-secondary: #f7f3e8;
+    --bg-card: #ffffff;
+    --text-primary: #064e3b;
+    --text-secondary: #475569;
+    --accent-gold: #b8911f;
+}
+body {
+    background: var(--bg-primary);
+    min-height: 100vh;
+    font-family: "Inter", "Noto Sans Bengali", sans-serif;
+    color: var(--text-primary);
+}
+.glass-card {
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+}
+.light .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+.prayer-card {
+    transition: all 0.3s ease;
+}
+.prayer-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+.prayer-card.active {
+    background: linear-gradient(
+        135deg,
+        rgba(212, 175, 55, 0.3) 0%,
+        rgba(4, 120, 87, 0.3) 100%
+    );
+    border-color: var(--accent-gold);
+}
+.countdown-pulse {
+    animation: pulse 2s infinite;
+}
+.islamic-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--accent-gold);
+    border-radius: 3px;
+}
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(212, 175, 55, 0.1) 25%,
+        rgba(212, 175, 55, 0.2) 50%,
+        rgba(212, 175, 55, 0.1) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+@media (max-width: 640px) {
+    .countdown-timer {
+        font-size: 3.5rem;
+        letter-spacing: 0.05em;
+    }
+    .hero-section {
+        padding: 1.5rem !important;
+    }
+}
+@media (min-width: 640px) and (max-width: 768px) {
+    .countdown-timer {
+        font-size: 4.5rem;
+    }
+}
