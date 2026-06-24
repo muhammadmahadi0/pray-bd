@@ -591,10 +591,11 @@ function renderPrayerCards() {
     }
 
     if (nextIdx === -1) nextIdx = 0;
+    if (currentIdx === -1) currentIdx = prayerKeys.length - 1;
 
-    state.currentPrayer = currentIdx >= 0
-        ? { key: prayerKeys[currentIdx], name: t[prayerKeys[currentIdx]], time: state.prayerTimes[prayerKeys[currentIdx]] }
-        : null;
+    state.currentPrayer = {
+        key: prayerKeys[currentIdx], name: t[prayerKeys[currentIdx]], time: state.prayerTimes[prayerKeys[currentIdx]]
+    };
     state.nextPrayer = {
         key: prayerKeys[nextIdx],
         name: t[prayerKeys[nextIdx]],
