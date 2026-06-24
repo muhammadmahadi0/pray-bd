@@ -577,19 +577,40 @@ function renderPrayerCards() {
     const now = getLocalNow();
     const currentMinutes = now.hour * 60 + now.minute;
 
-    const prayerKeys = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
-    let currentIdx = -1;
-    let nextIdx = -1;
+    const PT = state.prayerTimes;
+    const fajrM = timeToMinutes(PT.fajr);
+    const sunriseM = timeToMinutes(PT.sunrise);
+    const dhuhrM = timeToMinutes(PT.dhuhr);
+    const asrM = timeToMinutes(PT.asr);
+    const maghribM = timeToMinutes(PT.maghrib);
+    const ishaM = timeToMinutes(PT.isha);
 
-    for (let i = 0; i < prayerKeys.length; i++) {
-        const mins = timeToMinutes(state.prayerTimes[prayerKeys[i]]);
-        if (currentMinutes >= mins) {
+    const windows = [
+        { key: "fajr", start: fajrM, end: sunriseM },
+        { key: "dhuhr", start: dhuhrM, end: asrM },
+        { key: "asr", start: asrM, end: maghribM },
+        { key: "maghrib", start: maghribM, end: ishaM },
+        { key: "isha", start: ishaM, end: fajrM + 1440 },
+    ];
+
+    let currentIdx = -1;
+    for (let i = 0; i < windows.length; i++) {
+        const w = windows[i];
+        if (currentMinutes >= w.start && currentMinutes < w.end) {
             currentIdx = i;
-        } else if (nextIdx === -1) {
-            nextIdx = i;
+            break;
         }
     }
 
+    const prayerKeys = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+    let nextIdx = -1;
+    for (let i = 0; i < prayerKeys.length; i++) {
+        const mins = timeToMinutes(PT[prayerKeys[i]]);
+        if (currentMinutes < mins) {
+            nextIdx = i;
+            break;
+        }
+    }
     if (nextIdx === -1) nextIdx = 0;
 
     state.currentPrayer = currentIdx >= 0
