@@ -2,7 +2,7 @@
 
 Modern prayer times web app for Bangladesh with real-time countdown and Hijri date.
 
-**Live:** [pray.netlify.app](https://pray.netlify.app)
+**Live:** [pray.netlify.app](https://praybd.netlify.app)
 
 ## Features
 
