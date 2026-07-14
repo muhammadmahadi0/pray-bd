@@ -659,6 +659,75 @@ function getTimeRemaining(timeStr) {
 // COUNTDOWN & TIME
 // ============================================
 
+function formatCountdownTime(hours, mins, secs) {
+    const h = String(Math.floor(hours)).padStart(2, "0");
+    const m = String(Math.floor(mins)).padStart(2, "0");
+    const s = String(Math.floor(secs)).padStart(2, "0");
+    if (state.lang === "bn") {
+        const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+        const toBn = (n) =>
+            n
+                .toString()
+                .split("")
+                .map((d) => bnDigits[parseInt(d)])
+                .join("");
+        return `${toBn(h)}:${toBn(m)}:${toBn(s)}`;
+    }
+    return `${h}:${m}:${s}`;
+}
+
+function getSpecialPeriod() {
+    if (!state.prayerTimes || !state.prayerTimes.sunrise || !state.prayerTimes.dhuhr) return null;
+
+    const now = getLocalNow();
+    const cm = now.hour * 60 + now.minute;
+    const cs = now.hour * 3600 + now.minute * 60 + now.second;
+
+    const sun = timeToMinutes(state.prayerTimes.sunrise);
+    const dhuhr = timeToMinutes(state.prayerTimes.dhuhr);
+    const sunriseEnd = sun + 15;
+    const ishraqEnd = sunriseEnd + 120; // 2 hours after prohibited period
+    const chashtEnd = dhuhr - 10;
+
+    if (cm >= sun && cm < sunriseEnd) {
+        // Sunrise prohibited period — RED
+        const remainSec = (sunriseEnd * 60 - cs + 86400) % 86400;
+        return {
+            type: "prohibited",
+            labelBn: "সূর্যোদয় (নিষিদ্ধ)",
+            labelEn: "Sunrise (prohibited)",
+            remainSec,
+            isRed: true,
+        };
+    }
+
+    if (cm >= sunriseEnd && cm < ishraqEnd) {
+        // Ishraq
+        const remainSec = (chashtEnd * 60 - cs + 86400) % 86400;
+        return {
+            type: "ishraq",
+            labelBn: "ইশরাক",
+            labelEn: "Ishraq",
+            remainSec,
+            isRed: false,
+        };
+    }
+
+    if (cm >= ishraqEnd && cm < chashtEnd) {
+        // Chasht
+        const remainSec = (chashtEnd * 60 - cs + 86400) % 86400;
+        return {
+            type: "chasht",
+            labelBn: "চাশত",
+            labelEn: "Chasht",
+            remainSec,
+            isRed: false,
+        };
+    }
+
+    return null;
+}
+
 function getNextPrayerInfo() {
     if (!state.prayerTimes) return null;
 
@@ -695,6 +764,21 @@ function getNextPrayerInfo() {
 function updateCountdown() {
     if (!state.prayerTimes) return;
 
+    // Check special morning periods first (prohibited / Ishraq / Chasht)
+    const special = getSpecialPeriod();
+    if (special) {
+        const h = special.remainSec / 3600;
+        const m = (special.remainSec % 3600) / 60;
+        const s = special.remainSec % 60;
+        elements.countdown.textContent = formatCountdownTime(h, m, s);
+        elements.countdown.style.color = special.isRed ? "#ef4444" : "";
+        elements.nextPrayerLabel.textContent = state.lang === "bn" ? special.labelBn : special.labelEn;
+        return;
+    }
+
+    // Normal — reset red
+    elements.countdown.style.color = "";
+
     const nextInfo = getNextPrayerInfo();
     if (!nextInfo) return;
 
@@ -711,25 +795,8 @@ function updateCountdown() {
     const diff = target
         .diff(now, ["hours", "minutes", "seconds"])
         .toObject();
-    const hours = String(Math.floor(diff.hours)).padStart(2, "0");
-    const mins = String(Math.floor(diff.minutes)).padStart(2, "0");
-    const secs = String(Math.floor(diff.seconds)).padStart(2, "0");
 
-    let displayTime;
-    if (state.lang === "bn") {
-        const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
-        const toBn = (n) =>
-            n
-                .toString()
-                .split("")
-                .map((d) => bnDigits[parseInt(d)])
-                .join("");
-        displayTime = `${toBn(hours)}:${toBn(mins)}:${toBn(secs)}`;
-    } else {
-        displayTime = `${hours}:${mins}:${secs}`;
-    }
-
-    elements.countdown.textContent = displayTime;
+    elements.countdown.textContent = formatCountdownTime(diff.hours, diff.minutes, diff.seconds);
 
     const t = translations[state.lang];
     const tomorrowLabel = nextInfo.isTomorrow ? ` (${state.lang === "bn" ? "আগামীকাল" : "Tomorrow"})` : "";

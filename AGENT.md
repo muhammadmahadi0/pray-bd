@@ -19,6 +19,7 @@ Modern Islamic prayer times web application for Bangladesh with real-time countd
 - Bengali/English language support
 - Automatic midnight refresh
 - Local caching (24-hour)
+- **Special timer periods:** Sunrise prohibited (RED), Ishraq, Chasht (countdown to Dhuhr-10min)
 
 ## API Integration
 
