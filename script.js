@@ -611,18 +611,12 @@ function renderPrayerCards() {
             const timeLeft = isNext && !isActive
                 ? getTimeRemaining(prayer.time)
                 : "";
-            const label = isActive
-                ? state.lang === "bn"
-                    ? "বর্তমান"
-                    : "Current"
-                : "";
 
             return `
-                        <div class="prayer-card glass-card rounded-xl p-4 ${isActive ? "active" : ""} ${isNext && !isActive ? "ring-2 ring-gold-400/50" : ""}">
+                        <div class="prayer-card glass-card rounded-xl p-4 ${isActive ? "active" : ""}">
                             <div class="flex items-center gap-2 mb-2">
                                 <i data-lucide="${prayer.icon}" class="w-4 h-4 text-gold-400"></i>
                                 <span class="text-sm font-medium">${prayer.name}</span>
-                                ${isActive ? `<span class="ml-auto text-xs bg-gold-500 text-emerald-950 px-2 py-0.5 rounded">${label}</span>` : ""}
                             </div>
                             <div class="text-2xl font-bold text-gold-400">${formatTime(prayer.time)}</div>
                             ${isNext && timeLeft && !isActive ? `<div class="text-xs text-cream-200 mt-1">${timeLeft}</div>` : ""}
@@ -852,6 +846,8 @@ function updateHijriDateDisplay() {
         let month = state.hijriDate.month.en;
         let year = state.hijriDate.year;
 
+        // Aladhan calculates Hijri (Umm al-Qura), which is often 1 day ahead
+        // of Bangladesh local moon sighting. Subtract 1 day to align.
         const monthLengths = {
             Muharram: 30,
             Safar: 29,
@@ -866,11 +862,25 @@ function updateHijriDateDisplay() {
             "Dhu al-Qidah": 30,
             "Dhu al-Hijjah": 29,
         };
+        const months = Object.keys(monthLengths);
+
+        // Decrement by 1 for Bangladesh local sighting
+        day -= 1;
+        if (day < 1) {
+            // Go to previous month
+            const idx = months.indexOf(month);
+            if (idx > 0) {
+                month = months[idx - 1];
+            } else {
+                month = "Dhu al-Hijjah";
+                year--;
+            }
+            day = monthLengths[month] || 30;
+        }
 
         const maxDay = monthLengths[month] || 30;
         if (day > maxDay) {
             day = 1;
-            const months = Object.keys(monthLengths);
             const idx = months.indexOf(month);
             if (idx < 11) month = months[idx + 1];
             else {
