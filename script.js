@@ -613,7 +613,7 @@ function renderPrayerCards() {
                 : "";
 
             return `
-                        <div class="prayer-card glass-card rounded-xl p-4 ${isActive ? "active" : ""}">
+                        <div class="prayer-card glass-card rounded-xl p-4">
                             <div class="flex items-center gap-2 mb-2">
                                 <i data-lucide="${prayer.icon}" class="w-4 h-4 text-gold-400"></i>
                                 <span class="text-sm font-medium">${prayer.name}</span>
